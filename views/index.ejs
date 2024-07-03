@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+
+<body>
+    <h1>Home</h1>
+
+    <form action="/add-data" method="POST">
+        <input type="hidden" name="someData"/>
+        <button type="submit">Add Data to Firebase</button>
+    </form>
+    
+
+    <p id="demo"> <%= tes %> </p>
+
+    <h1>Image Upload</h1>
+    <form action="/upload-user" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <br>
+        <input type="text" name="userId" value="User Id">
+        <button type="submit">Upload</button>
+    </form>
+
+
+</body>
+
+</html>

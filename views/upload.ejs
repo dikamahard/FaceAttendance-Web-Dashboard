@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload User</title>
+</head>
+
+<style>
+    table, th, td {
+      border:1px solid black;
+    }
+</style>
+
+<body>
+    <h1>Upload Master Photo</h1>
+    <br>
+    <h2>Photo Upload</h2>
+    <form action="/upload-user" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*">
+        <br>
+        <input type="text" name="userId" placeholder="Enter user id here">
+        <input type="text" name="userName" placeholder="Enter user name here">
+        <button type="submit">Upload</button>
+    </form>
+
+    <h2>Master Data</h2>
+    
+    <table style="width:100%">
+        <tr>
+          <th>Photo</th>
+          <th>User Id</th>
+          <th>Action</th>
+        </tr>
+        <tr>
+          <td>pic1</td>
+          <td>Maria </td>
+          <td>Germany</td>
+        </tr>
+        <tr>
+          <td>pic2 </td>
+          <td>Francisco Chang</td>
+          <td>Mexico</td>
+        </tr>
+        <% for (let i = 0; i < listPathRef.length; i++) { %>
+            <tr>
+                <td><img src= <%= listPhotoUrl[i] %> alt="Master Data" width="200" height="200"></td>
+                <td><%= listPhotoId[i] %></td>
+                <td>
+                  <form action="/delete-user" method="POST">
+                    <input type="hidden" name="userId" value="<%= listPhotoId[i] %>">
+                    <button type="submit">Delete</button>
+                </form>
+                </td>
+            </tr>
+        <% }; %>
+      </table>
+
+
+</body>
+
+</html>
