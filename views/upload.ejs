@@ -30,22 +30,15 @@
         <tr>
           <th>Photo</th>
           <th>User Id</th>
+          <th>User Name</th>
           <th>Action</th>
         </tr>
-        <tr>
-          <td>pic1</td>
-          <td>Maria </td>
-          <td>Germany</td>
-        </tr>
-        <tr>
-          <td>pic2 </td>
-          <td>Francisco Chang</td>
-          <td>Mexico</td>
-        </tr>
+
         <% for (let i = 0; i < listPathRef.length; i++) { %>
             <tr>
                 <td><img src= <%= listPhotoUrl[i] %> alt="Master Data" width="200" height="200"></td>
                 <td><%= listPhotoId[i] %></td>
+                <td><%= listUserName[i] %></td>
                 <td>
                   <form action="/delete-user" method="POST">
                     <input type="hidden" name="userId" value="<%= listPhotoId[i] %>">
