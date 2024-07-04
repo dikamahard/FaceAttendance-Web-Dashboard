@@ -14,7 +14,8 @@ const app = express()
 const PORT = 4353
 
 app.set('view engine', 'ejs')   // set templating engine
-app.use(express.urlencoded({ extended: true }));    // needed to parse body from html form to the server
+app.use(express.static('public'))   // middleware for static file, which is located in public dir
+app.use(express.urlencoded({ extended: true }));    // middleware needed to parse body from html form to the server
 
 //app.set('views','./views')
 
@@ -41,10 +42,10 @@ app.get('/upload', async (req, res) => {
         */
 
     const listResult = await listAll(photoRef)
-    let listPathRef = []
-    let listPhotoUrl = []
-    let listPhotoId = []
-    let listUserName = []
+    let listPathRef = []    // path/to/image1.jpg
+    let listPhotoUrl = []   // https::firebasestorage.linkurl.image.jpg
+    let listPhotoId = []    // image1.jpg
+    let listUserName = []   // get the user name from database using imageId
 
     listResult.items.forEach((item) => {
         listPathRef.push(item.fullPath)
