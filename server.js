@@ -4,8 +4,6 @@ import { ref as ref_storage, uploadBytes, getDownloadURL, listAll, deleteObject 
 import multer from 'multer'
 
 
-//const fb = require('./firebaseConfig')
-//const {fb, db} = require('./firebase')
 import {fb, db, storage} from './firebase.js'
 import fbConf from './firebaseConfig.js'
 import dataTes from './tes.js'
@@ -51,7 +49,8 @@ app.get('/upload', async (req, res) => {
     listResult.items.forEach((item) => {
         listPathRef.push(item.fullPath)
         listPhotoId.push(item.name)
-        const userNameRef = ref_db(db, `tes/${item.name.split('.')[0]}`)
+        const userId = item.name.split('.')[0]
+        const userNameRef = ref_db(db, `tes/${userId}`)
         onValue(userNameRef, (snapshot) => {
             const user = snapshot.val()
             if (user) {
@@ -78,6 +77,7 @@ app.get('/upload', async (req, res) => {
 
 })
 
+// TODO: recomended to use post
 app.get('/update', (req, res) => {
     const userId = (req.query.userId).split('.')[0]
     const userName = req.query.userName
@@ -102,7 +102,6 @@ app.post('/add-data', async (req, res) => {
     }
     
 })
-
 
 const upload = multer({
     storage: multer.memoryStorage()
@@ -133,15 +132,24 @@ app.post('/upload-user', upload.single('image'), async (req, res) => {
 
 })
 
-// TODO: Delete user from db
 app.post('/delete-user', async (req, res) => {
-    const userId = req.body.userId
+    const photoId = req.body.photoId
+    const userId = (req.body.photoId).split('.')[0]
+    const databasePath = `tes/${userId}`
+    const storagePath = `tes/${photoId}`
+
+
 
     try {
-        const userPhotoRef = ref_storage(storage, `tes/${userId}`)
-        // delete here
+        const userPhotoRef = ref_storage(storage, storagePath)
+        // delete photo from storage
         await deleteObject(userPhotoRef)
-        console.log(`deleted ${userPhotoRef}`)
+        console.log(`deleted storage${userPhotoRef}`)
+
+        // delete user from db
+        await remove(ref_db(db, databasePath))
+        console.log(`deleted ${databasePath}`)
+
         res.redirect('/upload')
 
     } catch (error) {
