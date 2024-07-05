@@ -1,5 +1,5 @@
 import express from 'express'
-import { onValue, ref as ref_db, set } from 'firebase/database'
+import { onValue, ref as ref_db, remove, set } from 'firebase/database'
 import { ref as ref_storage, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage'
 import multer from 'multer'
 
@@ -12,6 +12,7 @@ import dataTes from './tes.js'
 
 const app = express()
 const PORT = 4353
+const STORAGE_DIR = ''
 
 app.set('view engine', 'ejs')   // set templating engine
 app.use(express.static('public'))   // middleware for static file, which is located in public dir
@@ -24,7 +25,7 @@ app.get('/', (req, res) => {
     res.render('index.ejs', {tes: dataTes})
 })
 
-// fecth img data from firebase here
+// fecth img data from firebase here (change to try catch) need debug sometimes shown no names
 app.get('/upload', async (req, res) => {
 
     const photoRef = ref_storage(storage, 'tes')
@@ -53,7 +54,11 @@ app.get('/upload', async (req, res) => {
         const userNameRef = ref_db(db, `tes/${item.name.split('.')[0]}`)
         onValue(userNameRef, (snapshot) => {
             const user = snapshot.val()
-            listUserName.push(user.name)
+            if (user) {
+                listUserName.push(user.name);
+            } else {
+                console.log(`No user found at ${userNameRef}`);
+            }
         })
     
 
@@ -70,6 +75,15 @@ app.get('/upload', async (req, res) => {
 
     res.render('upload.ejs', {listPathRef: listPathRef, listPhotoUrl: listPhotoUrl, listPhotoId: listPhotoId, listUserName: listUserName})
 
+
+})
+
+app.get('/update', (req, res) => {
+    const userId = (req.query.userId).split('.')[0]
+    const userName = req.query.userName
+    const photoUrl = req.query.photoUrl
+    console.log(userId)
+    res.render('update.ejs', {userId: userId, userName: userName, photoUrl: photoUrl})
 
 })
 
@@ -119,6 +133,7 @@ app.post('/upload-user', upload.single('image'), async (req, res) => {
 
 })
 
+// TODO: Delete user from db
 app.post('/delete-user', async (req, res) => {
     const userId = req.body.userId
 
@@ -135,6 +150,75 @@ app.post('/delete-user', async (req, res) => {
     }
 })
 
+app.post('/update-user', upload.single('image'), async (req, res) => {
+    const userId = req.body.userId
+    const oldUserId = req.body.oldUserId
+    const userName = req.body.userName
+    const imageInputted = req.file
+    const photoUrl = req.body.photoUrl
+
+    const databasePath = `tes/${userId}`
+    const oldDatabasePath = `tes/${oldUserId}`
+    const tesStorageRef = ref_storage(storage, `${databasePath}.jpg`)
+    const metadata = {
+        contentType: 'image/png'
+    }
+
+    try {
+        if(imageInputted) {  
+            // delete old photo
+            const oldPhotoRef = ref_storage(storage, `${oldDatabasePath}.jpg`)
+            await deleteObject(oldPhotoRef)
+            console.log('delete old photo')
+
+            // delete old user on db
+            await remove(ref_db(db, oldDatabasePath))
+            console.log('delete old user')
+
+            // set new user on db
+            await set(ref_db(db, databasePath), {
+                name: userName
+            })
+            console.log('set new user')
+
+            // upload photo with new userId
+            const result = await uploadBytes(tesStorageRef, imageInputted.buffer, metadata)
+            console.log(`Updated ${userId} ${userName} ${result.metadata.size}`)
+
+            res.redirect('/upload');
+        }else { 
+            // load image from url into a buffer
+            const imageFetch = await fetch(photoUrl)
+            const imgBuffer = Buffer.from(await imageFetch.arrayBuffer())
+
+            // delete old photo
+            const oldPhotoRef = ref_storage(storage, `${oldDatabasePath}.jpg`)
+            await deleteObject(oldPhotoRef)
+            console.log('delete old photo')
+
+            // delete old user on db
+            await remove(ref_db(db, oldDatabasePath))
+            console.log(`delete old user on id ${oldUserId}`)
+
+            // set new user on db
+            await set(ref_db(db, databasePath), {
+                name: userName
+            })
+            console.log(`set new user on id ${userId}`)
+
+            // upload photo with new userId
+            const result = await uploadBytes(tesStorageRef, imgBuffer, metadata)
+            console.log(`Updated ${userId} ${userName} ${result.metadata.size}`)
+
+            res.redirect('/upload');
+        }
+
+    } catch (error) {
+        return res.status(400).send(error.message)
+    }
+
+    
+})
 
 app.listen(PORT, () => {
     console.log(`Server ${fbConf.appId} is running on http://localhost:${PORT}`)

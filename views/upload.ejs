@@ -121,10 +121,10 @@
 
                   <!-- Page Heading -->
                   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                      <h1 class="h3 mb-0 text-gray-800">Upload</h1>
+                      <h1 class="h3 mb-0 text-gray-800">Update</h1>
                   </div>
 
-                  <!-- Approach -->
+                  <!-- Photo Upload -->
                   <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Photo Upload</h6>
@@ -141,7 +141,7 @@
                 </div>
 
             
-                  <!-- Approach -->
+                  <!-- Master Data -->
                   <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Master Data</h6>
@@ -159,16 +159,18 @@
                           <% for (let i = 0; i < listPathRef.length; i++) { %>
                               <tr>
                                   <td><img src= <%= listPhotoUrl[i] %> alt="Master Data" width="200" height="200"></td>
-                                  <td><%= listPhotoId[i] %></td>
+                                  <td><%= listPhotoId[i].split('.')[0] %></td>
                                   <td><%= listUserName[i] %></td>
                                   <td>
                                     <form action="/delete-user" method="POST">
                                       <input type="hidden" name="userId" value="<%= listPhotoId[i] %>">
                                       <button type="submit" class="btn btn-danger">Delete</button>
                                     </form>
-                                    <form action="/update-user" method="POST">
+                                    <br>
+                                    <form action="/update" method="GET">
+                                      <input type="hidden" name="photoUrl" value="<%= listPhotoUrl[i] %>">
                                       <input type="hidden" name="userId" value="<%= listPhotoId[i] %>">
-                                      <br>
+                                      <input type="hidden" name="userName" value="<%= listUserName[i] %>">
                                       <button type="submit" class="btn btn-warning">Update</button>
                                     </form>
                                   </td>
