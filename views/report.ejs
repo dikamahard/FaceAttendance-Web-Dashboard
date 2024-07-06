@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload User</title>
+    <title>User Report</title>
     <!-- Custom fonts for this template-->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
@@ -50,7 +50,7 @@
           <hr class="sidebar-divider my-0">
 
           <!-- Nav Item - Upload -->
-          <li class="nav-item active">
+          <li class="nav-item">
               <a class="nav-link" href="/upload">
                   <i class="fas fa-fw fa-tachometer-alt"></i>
                   <span>Update</span></a>
@@ -60,7 +60,7 @@
           <hr class="sidebar-divider my-0">
 
           <!-- Nav Item - Report -->
-          <li class="nav-item ">
+          <li class="nav-item active">
               <a class="nav-link" href="/report">
                   <i class="fas fa-fw fa-tachometer-alt"></i>
                   <span>Report</span></a>
@@ -82,29 +82,60 @@
           <div id="content">
 
               <!-- Begin Page Content -->
-            <div class="container-fluid">
+              <div class="container-fluid">
 
                   <!-- Page Heading -->
                   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                      <h1 class="h3 mb-0 text-gray-800">Upload</h1>
+                      <h1 class="h3 mb-0 text-gray-800">Report</h1>
                   </div>
 
-                  <!-- Update Photo -->
-                <div class="card shadow mb-4">
+                  <!-- Photo Upload -->
+                  <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Master Data Update</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Choose User</h6>
                     </div>
                     <div class="card-body">
-                        <img src= <%= photoUrl %> alt="Master Data" width="200" height="200">
-                        <form action="/update-user" method="POST" enctype="multipart/form-data">
-                            <input type="file" name="image" accept="image/*">
-                            <br>
-                            <input type="text" name="userId" value="<%= userId %>">
-                            <input type="hidden" name="oldUserId" value="<%= userId %>">
-                            <input type="text" name="userName" value="<%= userName %>">
-                            <input type="hidden" name="photoUrl" value="<%= photoUrl %>">
-                            <button type="submit" class="btn btn-success">Update</button>
-                        </form>
+                      <form action="/report" method="POST">
+                        <label for="userChoose">Pick User</label>
+                        <select name="userChoose">
+                            <% for (let i = 0; i < users.length; i++) { %>
+                                <option value= <%= users[i].id %> > <%= users[i].name %> </option>
+                            <% }; %>               
+                        </select>
+                        <br>
+                        <button type="submit" class="btn btn-success">Generate Data</button>
+                    </form>
+                    </div>
+                </div>
+
+            
+                  <!-- Master Data -->
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">User Report <%= userName %></h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                          <tr>
+                            <th>Date</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                          </tr>
+
+                          <% if (attendances) { %>
+                            <% for (let i = 0; i < attendances.length; i++) { %>
+                                <tr>
+                                    <td><%= attendances[i].date %></td>
+                                    <td><%= attendances[i].timeIn %></td>
+                                    <td> <%= attendances[i].timeOut %> </td>
+                                </tr>
+                              <% }; %>
+                          <% }; %>
+                        
+                        </table>
+                      </div>
+                      
                     </div>
                 </div>
 

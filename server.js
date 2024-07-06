@@ -1,5 +1,5 @@
 import express from 'express'
-import { onValue, ref as ref_db, remove, set } from 'firebase/database'
+import { child, onValue, ref as ref_db, remove, set, get } from 'firebase/database'
 import { ref as ref_storage, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage'
 import multer from 'multer'
 
@@ -77,15 +77,117 @@ app.get('/upload', async (req, res) => {
 
 })
 
-// TODO: recomended to use post
+// TODO: recomended to use post but this just proofs that get is working too
 app.get('/update', (req, res) => {
     const userId = (req.query.userId).split('.')[0]
     const userName = req.query.userName
     const photoUrl = req.query.photoUrl
     console.log(userId)
     res.render('update.ejs', {userId: userId, userName: userName, photoUrl: photoUrl})
-
 })
+
+/////////////////////////
+// first method using query on the get
+app.post('/report', (req, res) => {
+
+    if (req.body) {
+        console.log(req.body.userChoose)
+        const userDataEncoded = encodeURIComponent(req.body.userChoose)
+        res.redirect(`/report?userId=${userDataEncoded}`)   // this is techcnically is a get
+    } else {
+        console.log('empty')
+    }
+    
+})
+
+app.get('/report', async (req, res) => {
+    const userId = req.query.userId
+    const userArr = []
+
+    // get user name and id to populate name picker
+    const userSnapshot = await get(child(ref_db(db), `users`))
+    console.log(userSnapshot.val())
+
+    userSnapshot.forEach(record => {
+        record.forEach(name => {
+            const user = {
+                id: record.key, 
+                name: name.val()
+            }
+            userArr.push(user)
+        })
+    })
+    console.log(userArr)
+
+    if (userId) {
+        const attendanceArr = []
+        const attendanceSnapshot = await get(child(ref_db(db), `records/${userId}`))
+        console.log(attendanceSnapshot.val())
+
+        attendanceSnapshot.forEach(date => {
+            const timeArr = []
+            let timeIn = '--.--'
+            let timeOut = '--.--'
+
+            // get the first and last time
+            date.forEach(time => {
+                timeArr.push(time.key)
+                if (timeArr.length > 1) {
+                    timeIn = timeArr[0]
+                    timeOut = timeArr.at(-1)
+                } else {
+                    timeIn = timeArr[0]
+                }
+            })
+
+            const attendance = {
+                date: date.key,
+                timeIn: timeIn,
+                timeOut: timeOut
+            }
+            attendanceArr.push(attendance)
+        })
+        console.log(attendanceArr)
+
+        // get username based on userId
+        const userName = (await get(child(ref_db(db), `users/${userId}/name`))).val()
+
+        res.render('report.ejs', {userName: userName, attendances: attendanceArr, users: userArr})        
+    
+    }else {
+        res.render('report.ejs', {userName: null, attendances: null, users: userArr})
+    }
+    
+})
+    
+
+// second method using params on the get
+/*
+app.post('/report', (req, res) => {
+
+    if (req.body) {
+        console.log(req.body.userChoose)
+        const userDataEncoded = encodeURIComponent(req.body.userChoose)
+        res.redirect(`/report/${userDataEncoded}`)  // this is techcnically is a get
+    } else {
+        console.log('empty')
+    }
+    
+})
+
+    // need two get method, the first is for accesing with data generated for the id 
+    // and the second is for accessing it for the first time without the data generated
+    // path parameters are mandatory unlike query which is optional so the first method only need 1 get
+app.get('/report/:id', (req, res) => {
+    console.log('params id')
+    res.render('report.ejs', {userId: req.params.id})
+})
+
+app.get('/report', (req, res) => {
+    console.log('no params id')
+    res.render('report.ejs', {userId: req.params.id})
+})*/
+///////////////////////////
 
 app.post('/add-data', async (req, res) => {
 
