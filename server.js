@@ -46,25 +46,32 @@ app.get('/upload', async (req, res) => {
     let listPhotoId = []    // image1.jpg
     let listUserName = []   // get the user name from database using imageId
 
+    // BACKGROUND ASYNCHORNOUS METHOD, THIS WILL NOT WAIT FOR THE LOOP ON CALL 1 TO BE DONE BEFORE GOING TO CALL 2
+    console.log("call0")
     listResult.items.forEach(async (item) => {
         listPathRef.push(item.fullPath)
         listPhotoId.push(item.name)
         const userId = item.name.split('.')[0]
-        //const userNameRef = ref_db(db, `users/${userId}`)
-        /*
-        onValue(userNameRef, (snapshot) => {
-            const user = snapshot.val()
-            if (user) {
-                listUserName.push(user.name);
-            } else {
-                console.log(`No user found at ${userNameRef}`);
-            }
-        })*/
+        console.log("call0.5")
+        
         const userName = (await get(child(ref_db(db), `users/${userId}/name`))).val()
         listUserName.push(userName)
+        console.log("call1")
     })
-
+    /* // MORE SEQUENCE METHOD, THIS WILL WAIT FOR THE LOOP TO BE DONE BEFORE GOING TO CALL2
+    for (const item of listResult.items) {
+        listPathRef.push(item.fullPath);
+        listPhotoId.push(item.name);
+        const userId = item.name.split('.')[0];
+        console.log("call 0.5")
+        const userName = (await get(child(ref_db(db), `users/${userId}/name`))).val();
+        listUserName.push(userName);
+        console.log("call1")
+    }
+    */
+    console.log("call2")
     for (const item of listPathRef) {
+        console.log("call3")
         const url = await getDownloadURL(ref_storage(storage, item))
         listPhotoUrl.push(url)
     }
@@ -211,29 +218,31 @@ const upload = multer({
     storage: multer.memoryStorage()
 })
 app.post('/upload-user', upload.single('image'), async (req, res) => {
+    const userId = req.body.userId
+    const userName = req.body.userName
 
     try {
-        const userId = req.body.userId
-        const userName = req.body.userName
+        if (userId && userName) {
+            const storageRef = ref_storage(storage, `master/${userId}.jpg`)
+            const metadata = {
+                contentType: 'image/png'
+            }
 
-        const storageRef = ref_storage(storage, `master/${userId}.jpg`)
-        const metadata = {
-            contentType: 'image/png'
+
+            const result = await uploadBytes(storageRef, req.file.buffer, metadata)
+            const databasePath = `users/${userId}`
+            await set(ref_db(db, databasePath), {
+                name: userName
+            })
+            console.log(`Uploaded ${userId} ${userName} ${result.metadata.size}`)
+            res.redirect('/upload');
+        } else {
+            res.status(400).render('error', { message: "Empty Field Detected!!!" });
         }
-
-
-        const result = await uploadBytes(storageRef, req.file.buffer, metadata)
-        const databasePath = `users/${userId}`
-        await set(ref_db(db, databasePath), {
-            name: userName
-        })
-        console.log(`Uploaded ${userId} ${userName} ${result.metadata.size}`)
-        res.redirect('/upload');
-
     } catch (error) {
-        return res.status(400).send(error.message)
+        //return res.status(400).send(error.message)
+        res.status(400).render('error', { message: error.message });
     }
-
 })
 
 app.post('/delete-user', async (req, res) => {
