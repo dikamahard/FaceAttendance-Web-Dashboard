@@ -16,7 +16,7 @@ app.set('view engine', 'ejs')   // set templating engine
 app.use(express.static('public'))   // middleware for static file, which is located in public dir
 app.use(express.urlencoded({ extended: true }));    // middleware needed to parse body from html form to the server
 
-//app.set('views','./views')
+app.set('views','./views')  // is this necessary?? IDK
 
 
 app.get('/', (req, res) => {
@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 // fecth img data from firebase here (change to try catch) need debug sometimes shown no names
 app.get('/upload', async (req, res) => {
 
-    const photoRef = ref_storage(storage, 'tes')
+    const photoRef = ref_storage(storage, 'master')
 /*
     listAll(listRef).then((results) => {
         res.render('upload.ejs', {listData: results.items})
@@ -46,11 +46,12 @@ app.get('/upload', async (req, res) => {
     let listPhotoId = []    // image1.jpg
     let listUserName = []   // get the user name from database using imageId
 
-    listResult.items.forEach((item) => {
+    listResult.items.forEach(async (item) => {
         listPathRef.push(item.fullPath)
         listPhotoId.push(item.name)
         const userId = item.name.split('.')[0]
-        const userNameRef = ref_db(db, `tes/${userId}`)
+        //const userNameRef = ref_db(db, `users/${userId}`)
+        /*
         onValue(userNameRef, (snapshot) => {
             const user = snapshot.val()
             if (user) {
@@ -58,9 +59,9 @@ app.get('/upload', async (req, res) => {
             } else {
                 console.log(`No user found at ${userNameRef}`);
             }
-        })
-    
-
+        })*/
+        const userName = (await get(child(ref_db(db), `users/${userId}/name`))).val()
+        listUserName.push(userName)
     })
 
     for (const item of listPathRef) {
@@ -71,6 +72,7 @@ app.get('/upload', async (req, res) => {
 
     console.log(listPathRef)
     console.log(listPhotoId)
+    console.log(listUserName)
 
     res.render('upload.ejs', {listPathRef: listPathRef, listPhotoUrl: listPhotoUrl, listPhotoId: listPhotoId, listUserName: listUserName})
 
@@ -214,14 +216,14 @@ app.post('/upload-user', upload.single('image'), async (req, res) => {
         const userId = req.body.userId
         const userName = req.body.userName
 
-        const tesStorageRef = ref_storage(storage, `tes/${userId}.jpg`)
+        const storageRef = ref_storage(storage, `master/${userId}.jpg`)
         const metadata = {
             contentType: 'image/png'
         }
 
 
-        const result = await uploadBytes(tesStorageRef, req.file.buffer, metadata)
-        const databasePath = `tes/${userId}`
+        const result = await uploadBytes(storageRef, req.file.buffer, metadata)
+        const databasePath = `users/${userId}`
         await set(ref_db(db, databasePath), {
             name: userName
         })
@@ -237,8 +239,8 @@ app.post('/upload-user', upload.single('image'), async (req, res) => {
 app.post('/delete-user', async (req, res) => {
     const photoId = req.body.photoId
     const userId = (req.body.photoId).split('.')[0]
-    const databasePath = `tes/${userId}`
-    const storagePath = `tes/${photoId}`
+    const databasePath = `users/${userId}`
+    const storagePath = `master/${photoId}`
 
 
 
@@ -267,9 +269,9 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
     const imageInputted = req.file
     const photoUrl = req.body.photoUrl
 
-    const databasePath = `tes/${userId}`
-    const oldDatabasePath = `tes/${oldUserId}`
-    const tesStorageRef = ref_storage(storage, `${databasePath}.jpg`)
+    const databasePath = `users/${userId}`
+    const oldDatabasePath = `users/${oldUserId}`
+    const storageRef = ref_storage(storage, `${databasePath}.jpg`)
     const metadata = {
         contentType: 'image/png'
     }
@@ -292,7 +294,7 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
             console.log('set new user')
 
             // upload photo with new userId
-            const result = await uploadBytes(tesStorageRef, imageInputted.buffer, metadata)
+            const result = await uploadBytes(storageRef, imageInputted.buffer, metadata)
             console.log(`Updated ${userId} ${userName} ${result.metadata.size}`)
 
             res.redirect('/upload');
@@ -317,7 +319,7 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
             console.log(`set new user on id ${userId}`)
 
             // upload photo with new userId
-            const result = await uploadBytes(tesStorageRef, imgBuffer, metadata)
+            const result = await uploadBytes(storageRef, imgBuffer, metadata)
             console.log(`Updated ${userId} ${userName} ${result.metadata.size}`)
 
             res.redirect('/upload');
