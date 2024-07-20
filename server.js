@@ -280,7 +280,9 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
 
     const databasePath = `users/${userId}`
     const oldDatabasePath = `users/${oldUserId}`
-    const storageRef = ref_storage(storage, `${databasePath}.jpg`)
+    const storagePath = `master/${userId}`
+    const oldStoragePath = `master/${oldUserId}`
+    const storageRef = ref_storage(storage, `${storagePath}.jpg`)
     const metadata = {
         contentType: 'image/png'
     }
@@ -288,7 +290,7 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
     try {
         if(imageInputted) {  
             // delete old photo
-            const oldPhotoRef = ref_storage(storage, `${oldDatabasePath}.jpg`)
+            const oldPhotoRef = ref_storage(storage, `${oldStoragePath}.jpg`)
             await deleteObject(oldPhotoRef)
             console.log('delete old photo')
 
@@ -313,7 +315,7 @@ app.post('/update-user', upload.single('image'), async (req, res) => {
             const imgBuffer = Buffer.from(await imageFetch.arrayBuffer())
 
             // delete old photo
-            const oldPhotoRef = ref_storage(storage, `${oldDatabasePath}.jpg`)
+            const oldPhotoRef = ref_storage(storage, `${oldStoragePath}.jpg`)
             await deleteObject(oldPhotoRef)
             console.log('delete old photo')
 
